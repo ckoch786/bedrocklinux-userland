@@ -1,0 +1,150 @@
+#!/bin/sh
+### brg (BedRock Get Client)
+
+#CACHE=bedrock/etc/brg/cache/
+OPEN_VZ_SITE=http://download.openvz.org/template/precreated/
+TMP=$(mktemp -d)
+CACHE=/tmp/tmp.IFEJORdX2p
+mkdir $CACHE/chroot/
+BR_CLIENTS_HOME=$CACHE/chroot/
+# TODO create a progress function
+# TODO create a function for retrieving debootstrap, febootstrap, archstrap,
+# and a gentoo tarball
+
+
+# print help
+h(){
+	echo "Usage: brg ARGUMENT"
+	echo ""
+	echo "brg TODO describe command"
+	echo "brg will only accept one flag per execution."
+	echo ""
+	echo "ARGUMENTS:"
+	echo "   -h   print this Help"
+	echo "   -l   print List of clients"
+	echo "   -s   Sync client list with server"
+	echo "   -i   Install client"
+
+}
+
+# Sync with the server
+s(){
+	cd $CACHE
+	echo "Syncing with server..."
+	wget $OPEN_VZ_SITE
+}
+
+
+# TODO number the list, create a map?
+# TODO find a better way to run the commands then calling awk/sed multiple times
+# TODO check time stamp of cache and sync if neccesary
+# list available clients
+l(){
+	cd $CACHE
+	# TODO check to see if cache exists
+	n=1
+	for i in $(clients)
+	do
+		echo "[$n] $(basename $i .tar.gz)"
+		n=$(($n+1))
+	done
+}
+
+# Parses cache for clients
+clients(){
+	#cd $CACHE
+	grep -v .asc index.html |
+	grep .tar.gz |
+	cut -d"<" -f7 |
+	cut -d">" -f1 |
+	cut -d"=" -f2 |
+	cut -d'"' -f2 |
+	tr -s '\n' |
+	uniq
+}
+
+# TODO map # to client
+# TODO download client and sig
+# TODO check sig
+# untar
+# update configs
+# Install client
+i(){
+	for client in "$@"
+	do
+		Install_client
+	done
+}
+
+Install_client(){
+	cd $TMP
+	download_clients
+	cd $BR_CLIENTS_HOME
+	#if ! [ -d $(bri -l) ]
+	if ! [ -d $client ]
+	then
+		mkdir $client && cd $client
+		#untar_client
+	else
+		select_uniq_name
+	fi
+}
+
+select_uniq_name() {
+	echo "There is already a client with the same name."
+	echo "Would you like to give it a unique name or use the following:"
+	echo $client"_"$(date -d "today" +"%pY%m%d%H%M")"(y/n)"
+	read REPLY
+	if [ "$REPLY" = "y" ]
+	then
+		mkdir $client"_"$(date -d "today" +"%Y%m%d%H%M")
+		untar_client
+	elif [ "$REPLY" = "n" ]
+	then
+		enter_desired_name
+		untar_client
+	else
+		echo "Must enter y or n."
+		echo "You entered: $REPLY"
+		exit 1
+	fi
+}
+
+enter_desired_name(){
+	echo "Enter desired name:"
+	read REPLY
+	if [ "$REPLY" != "" ]
+	then
+		mkdir $REPLY
+	else
+		echo "You must enter a name"
+	fi
+}
+
+download_clients(){
+	echo "wget $OPEN_VZ_SITE/$client.tar.gz"
+	echo "wget $OPEN_VZ_SITE/$client.tar.gz.asc"
+}
+
+untar_client(){
+	tar xvf $TMP/$client.tar.gz
+}
+# parse arguments
+# TODO add an optional gpg (--gpg)flag for things that support it.
+case "$1" in
+	-h)
+		h;;
+	--help)
+		h;;
+	"")
+		h;;
+	-l)
+		l;;
+	-s)
+		s;;
+	-i)
+		shift
+		i $@;;
+	*)
+		h;;
+esac
