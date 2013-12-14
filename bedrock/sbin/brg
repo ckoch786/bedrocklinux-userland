@@ -1,13 +1,17 @@
 #!/bin/sh
 ### brg (BedRock Get Client)
 
-#CACHE=bedrock/etc/brg/cache/
+# TODO CACHE=bedrock/etc/brg/cache/
 OPEN_VZ_SITE=http://download.openvz.org/template/precreated/
+# For testing remove TODO
 TMP=$(mktemp -d)
+
+# TODO change to /bedrock/etc/brg/cache
 CACHE=/tmp/tmp.IFEJORdX2p
 mkdir $CACHE/chroot/
+
+# TODO get this from the users configs
 BR_CLIENTS_HOME=$CACHE/chroot/
-# TODO create a progress function
 # TODO create a function for retrieving debootstrap, febootstrap, archstrap,
 # and a gentoo tarball
 
@@ -24,6 +28,8 @@ h(){
 	echo "   -l   print List of clients"
 	echo "   -s   Sync client list with server"
 	echo "   -i   Install client"
+	echo "   --gpg"
+	echo "        check the gpg signature for available clients"
 
 }
 
@@ -129,6 +135,12 @@ download_clients(){
 untar_client(){
 	tar xvf $TMP/$client.tar.gz
 }
+
+# Retrieve and check gpg
+gpg(){
+
+}
+
 # parse arguments
 # TODO add an optional gpg (--gpg)flag for things that support it.
 case "$1" in
@@ -145,6 +157,8 @@ case "$1" in
 	-i)
 		shift
 		i $@;;
+	--gpg)
+		gpg;;
 	*)
 		h;;
 esac
